@@ -1,0 +1,86 @@
+%fdm in 2D iteration excercise
+% Week 5 2d FDM,  successive over-relaxation iterations        
+
+clear all;
+close all;
+clc;
+
+%% Initialise parameters and arrays
+eps0 = 1;    % permittivity of vacuum
+a = 1;           % set length scale a = 1 
+
+ngridx = 10;        % no. of grid points in x-direction / no of columns
+ngridy = 10;        % no. of grid points in y-direction / no of rows
+
+x = linspace(0,a,ngridx);
+y = linspace(0,a,ngridy);
+
+[X,Y] = meshgrid(x,y);           % create a meshgrid for X, Y coordinates
+
+V = zeros(ngridy, ngridx);           % initialise the solution potential array to zero
+V_before = zeros(ngridy, ngridx);    % initialise the "before" iterated solution
+rho = zeros(ngridy, ngridx);         % initialise the charge density array to zero (for parallel plate problem, we don't need this)
+epsr = ones(ngridy, ngridx);         % initialise the relative permittivity to 1
+
+%% Set boundary conditions for parallel plates
+
+% Dirichlet b.c. 
+V0 = 10;
+V(1,:) = V0;     % bottom 
+V(ngridy,2:ngridx) = 0;  % right
+V(1:ngridy,1) = V0;  % left
+V(:,ngridx) = 0; % top
+V_before = V;
+
+%% This part is the fdm successive over relaxation method
+
+t=cos(pi/ngridx)+cos(pi/ngridy);    
+w=(8-sqrt(64-16*t*t))/(t*t);        % "over-relaxation" term
+thres = 1e-4;                       % threshold of convergence
+Niter=1;                            % count the no. of iterations
+Maxiter=1000;                      % set a maximum no. of iterations (in case it takes too long)
+loop=1;                             % loop boolean -- if true, loop; else if false, break out of loop
+
+% Iterative successive over-relaxation loop
+while loop==1
+    for i = 2:ngridy-1
+        for j = 2:ngridx-1
+            residue = w * (0.25 * (V(i-1,j)+V(i+1,j)+V(i,j-1)+V(i,j+1)+(rho(i,j)/(epsr(i,j)*eps0))) -V(i,j) );
+            V_before = V;
+            V(i,j) = V(i,j) + residue;
+        end
+    end
+    if (max(abs(V-V_before))<thres)
+        loop = 0;       % exit with convergence
+        fprintf("Convergence at iteration %i",Niter)
+        fprintf("\n")
+    else
+        Niter = Niter + 1;
+        if Niter>Maxiter
+            loop = 0;   % exit without convergence
+            fprintf("No convergence through max iterations %i",Maxiter)
+            fprintf("\n")
+        end
+    end
+    imagesc(V);
+    colorbar;
+    title(['\fontsize{12}Potential, ',int2str(ngridy),'x',int2str(ngridx),' grid; iteration #',int2str(Niter)],'Color','k');
+    xlabel('x','FontSize',12);
+    ylabel('y','FontSize',12);
+    set(gca,'YDir','normal');
+    set(gca,'FontSize',12);
+    getframe;
+end
+
+%% Plot potential
+figure(2)
+surf(X, Y, V)
+hold on
+set(gca,'YDir','normal')    % set the axis to be from bottom to top
+colorbar;
+title(['\fontsize{14}Potential V, iterative method'],'Color','k');
+xlabel('x','FontSize',12);
+ylabel('y','FontSize',12);
+set(gca,'FontSize',12);
+hold off
+
