@@ -1,4 +1,4 @@
-%fdm in 2D iteration excercise
+%fdm (finite difference, direct method) in 2D iteration excercise
 % Week 5 2d FDM,  successive over-relaxation iterations        
 
 clear all;
