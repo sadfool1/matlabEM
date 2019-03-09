@@ -31,3 +31,116 @@ legend('numerical solution','analytical solution')
 ax = gca;
 ax.FontSize=16;
 hold off
+
+
+
+
+
+
+%Sample Question: 
+%Using the FDM, direct approach, find the potential between two surfaces if the B.C are: V(x=0) = 0 and V(x=1 cm) = 30 V.
+%Use a grid of 15 (or more) points, including the ends/boundaries.
+%Consider two cases separately:
+
+%(a) There is no charge distribution in the space between x = 0 and x = 1 cm.
+%(b) There is a charge distribution in the space between x = 0 and x = 1 cm.
+
+%Plot your numerical and analytical results for potential V, on the same plot for comparison.
+%Plot the numerical and analytical results for the x-component of the electric field.
+
+
+
+
+
+
+% 1d finite difference, direct method
+% Tutorial 4 Q6
+
+Vl = 0; xl = 0;  % left b.c.
+Vr = 30;  xr = 0.01;  % left b.c.
+n = 50;   % no. of grid points on 1d grid, incl. boundaries
+h = (xr-xl)/(n-1);   % spacing between points
+xgrid =linspace(xl, xr, n); % define array of gridpoints for plotting
+
+k = -3 ;    % charge density divided by permittivity of vacuum
+
+% Create the nxn "A" matrix -- students need to be able to read this
+% section of code. See documentation on spdiags here:
+% https://www.mathworks.com/help/matlab/ref/spdiags.html
+e = ones(n,1); 
+A = spdiags([e,-2*e,e], -1:1, n, n); % this is a sparse matrix; inverting a sparse matrix is faster
+A(1,1) = 1; A(n,n) = 1; A(1,2) = 0; A(n,n-1) = 0;
+Afull = full(A);  % this is not a sparse matrix -- let's use this for comparison of time to get solution
+disp(Afull)    % prints the full matrix to screen for checking
+
+% Create the nx1 b vector
+b = -(h^2)*k.*e;
+b(1) = Vl; b(end) = Vr; % boundary conditions. You can also use b(n) = Vr;
+
+% Solving for numerical values of V 
+% You can use this: Vnum = linsolve(A,b) 
+% or the following shorter notation
+disp('using sparse matrix')
+tic; Vnum = A\b; toc;    % solving using sparse matrix with timing (using sparse matrix is faster if the matrix is large)
+
+disp('using full matrix')
+tic; Vnum2 = Afull\b; toc; % solving using full matrix  
+
+% solve differential equation analytically
+% see https://www.mathworks.com/help/symbolic/solve-a-single-differential-equation.html
+
+syms V(x)
+
+eqn = diff(V,x,2) == -k;     % define ode
+cond1 = V(xl) == Vl;          % define b.c. (left)
+cond2 = V(xr) == Vr;       % define b.c. (right)
+conds = [cond1 cond2];
+
+VSol(x) = dsolve(eqn, conds);    % solve ode analytically
+
+disp('Analytical solution to V:')
+VSol = simplify(VSol)           % simplify the solution -- see output on screen
+
+% plot the potential solutions - numerical and analytical
+
+close('all')
+figure()
+plot(xgrid, Vnum, 'ro')    % plot numerical solution
+hold on
+fplot(VSol(x), [xl, xr], 'b-')
+title('1D FDM direct approach, Tutorial 4 Q6')
+xlabel('x/m')
+ylabel('V/V')
+legend({'numerical solution','analytical solution'}, 'Location', 'Northwest')
+ax = gca;
+ax.FontSize=16;
+hold off
+
+% computes the analytical and numerical solutions to electric field,
+% from analytical and numerical solutions to potential
+% See Mathworks numerical gradient: 
+% https://www.mathworks.com/help/matlab/ref/gradient.html?s_tid=doc_ta
+
+Enum = -1.*gradient(Vnum, h);   
+
+% And Mathworks analytical gradient:
+% https://www.mathworks.com/help/symbolic/gradient.html?s_tid=doc_ta
+disp('Analytical solution to E:')
+ESol = -1.*gradient(VSol,x)
+
+% plots the electric field solutions
+figure()
+plot(xgrid, Enum, 'ro')    % plot numerical solution
+hold on
+fplot(ESol(x), [xl, xr], 'b-')
+title({'Electric field'})
+xlabel('x/m')
+ylabel('E/Vm^{-1}')
+legend({'numerical solution','analytical solution'}, 'Location', 'Northeast')
+annotation('textarrow',[0.8, 0.9], [0.4, 0.15],'String','Numerical error at end.')
+annotation('textarrow',[0.3, 0.15], [0.35, 0.75],'String','decrease grid spacing reduces error.')
+ax = gca;
+ax.FontSize=12;
+hold off
+
+
