@@ -1,0 +1,33 @@
+% MatLab 1d finite difference, direct method
+% Wk4 online lecture
+
+
+Vl = 10; xl = 0;  % left b.c.
+Vr = 0;  xr = 1e-3;  % left b.c.
+n = 5;   % no. of grid points on 1d grid, incl. boundaries
+h = (xr-xl)/(n-1);   % spacing between points
+xgrid =linspace(xl, xr, n); % define array of gridpoints for plotting
+
+rho = 10e-6;    % charge density (constant)
+eps0 = 8.85e-12; % permittivity of vacuum
+k = rho/eps0;
+
+A = [1,0,0,0,0; 1,-2,1,0,0; 0,1,-2,1,0; 0,0,1,-2,1; 0,0,0,0,1]; % 5x5 matrix for 5 grid points
+b = [10; -(h^2)*k; -(h^2)*k; -(h^2)*k; 0];  
+Vnumerical = linsolve(A,b)  % solve set of linear equations numerically
+
+syms Vanalytic(x)
+Vanalytic(x) = -(k/2)*(x^2) + ((5e-4)*k - 1e4)*x + 10; % the analytic solution on slide 9
+
+close('all')
+figure()
+plot(xgrid, Vnumerical, 'ro')    % plot numerical solution
+hold on
+fplot(Vanalytic, [xl,xr], 'b-')  % plot analytical function;
+title('1D FDM direct example, Week 4 slides 8-11')
+xlabel('x/m')
+ylabel('V/V')
+legend('numerical solution','analytical solution')
+ax = gca;
+ax.FontSize=16;
+hold off
