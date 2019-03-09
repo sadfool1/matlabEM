@@ -1,9 +1,9 @@
-Use of matplolib, numpy to get integral.
-To use your experimental data to estimate the work done 
-will have to perform the integral R --> p dV numerically. 
-Use the trapezium rule (via the numpy.trapz Python function or the trapz function in GNU Octave or Matlab), or Simpson’s rule (via the scipy.integrate.simps Python function).
+#Use of matplolib, numpy to get integral.
+#To use your experimental data to estimate the work done 
+#will have to perform the integral R --> p dV numerically. 
+#Use the trapezium rule (via the numpy.trapz Python function or the trapz function in GNU Octave or Matlab), or Simpson’s rule (via the scipy.integrate.simps Python function).
 
-#For python code:
+#Python code:
 
 import matplotlib.pyplot as plt
 import csv
