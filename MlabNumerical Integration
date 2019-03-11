@@ -1,0 +1,17 @@
+%The potential V(theta) = c((sin(theta))**2) is specified on the surface of a hollow sphere of radius R.
+%find the potential and electric field by using code
+
+clc
+clear 'all'
+
+n = 10; 
+a = zeros([n+1,1]);
+
+syms y(x)
+
+for i = 0:n
+    y(x) = (sin(x)^2) * legendreP(i,cos(x)) * sin(x); % use anonymous inline function
+    a(i+1) = vpaintegral(y, 0, pi);
+    %disp(y(x))
+    fprintf("n = %i-th coefficient:\t %1.8f \n" ,i, a(i+1))
+end
