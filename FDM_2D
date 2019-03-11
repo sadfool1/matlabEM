@@ -83,17 +83,7 @@ xlabel('x','FontSize',12);
 ylabel('y','FontSize',12);
 set(gca,'FontSize',12);
 hold off
-
-
-
-
-
-
-
-
-
-
-
+___________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 
 %Utilize relaxation method for a 2D grid
 %Written for a square grid (n x n) and equal grid spacing (hx = hy = h)
@@ -209,3 +199,144 @@ ylabel('y','FontSize',12);
 set(gca,'FontSize',12);
 hold off
 
+
+___________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+
+
+%Gauss’ law is used to find the electric field between the plates of a parallel plate capacitor. 
+%In this simplified analysis, we had to ignore the fringing field at the edges of the capacitor.
+%Consider circular conducting plates of radius r, separated by a distance d. Solve Laplace’s equation
+%numerically for the region outside the parallel plates of an air-filled capacitor, and plot the fringing
+%electric field and potential that you obtain, for several ratios of d/r. (It should look somewhat similar to
+%the schematic below.)
+%For accuracy, you will need a large enough rectangular region so that the edges of the rectangle are far
+%enough to constitute “infinity”. Discuss why this should be so.
+
+Parallel plate capacitor's fringing field
+clear all;
+close all;
+clc;
+
+%% Initialise parameters and arrays
+eps0 = 8.85e-12;    % permittivity of vacuum
+elect= 1.6e-19;     % electron charge
+a0 = 1.0;           % set length scale a0 = 1 m
+gap = 8;           % set the distance between parallel plates (in no. of grids)
+
+ngridx = 201;        % no. of grid points in x-direction / no of columns
+ngridy = 151;        % no. of grid points in y-direction / no of rows
+
+x = linspace(0,a0,ngridx);
+y = linspace(0,a0,ngridy);
+[X,Y] = meshgrid(x,y);           % create a meshgrid for X, Y coordinates
+
+hx = a0/(ngridx-1);
+hy = a0/(ngridy-1);
+
+platel = floor(3*ngridx/10);     % left edge of parallel plate
+plater = ceil(ngridx-platel);    % right edge of parallel plate
+plateb = floor(ngridy/2)-round(gap/2);      % bottom plate position
+platet = ceil(ngridy/2)+round(gap/2);       % top plate position
+
+V = zeros(ngridy, ngridx);           % initialise the solution potential array to zero
+V_before = zeros(ngridy, ngridx);    % initialise the "before" iterated solution
+rho = zeros(ngridy, ngridx);         % initialise the charge density array to zero (for parallel plate problem, we don't need this)
+epsr = ones(ngridy, ngridx);         % initialise the relative permittivity to 1
+
+%% Set boundary conditions for parallel plates
+
+% Dirichlet b.c. 
+V(1,2:ngridx-1) = 0;         
+V(ngridy,2:ngridx) = 0;
+V(2:ngridy,1) = 0;
+V(2:ngridy,ngridx) = 0;
+V_before = V;
+
+% Dirichlet b.c. - potential of +10 V on top plate 
+V(platet, platel:plater) = 10;
+
+% Dirichlet b.c. - potential of -10 V on bottom plate 
+V(plateb, platel:plater) = -10;
+
+%% This part is the finite difference method
+
+t=cos(pi/ngridx)+cos(pi/ngridy);    
+w=(8-sqrt(64-16*t*t))/(t*t);        % "over-relaxation" term
+thres = 1e-5;                       % threshold of convergence
+Niter=1;                            % count the no. of iterations
+Maxiter=50000;                      % set a maximum no. of iterations (in case it takes too long)
+loop=1;                             % loop boolean -- if true, loop; else if false, break out of loop
+
+% Iterative successive over-relaxation loop
+while loop==1
+    for i = 2:ngridy-1
+        for j = 2:ngridx-1
+            % this residue definition with the above threshold converges at
+            % iteration 446
+            residue = (0.5*hx^2 /(hx^2 + hy^2))*(V(i,j-1)+V(i,j+1)+(hy^2 * hx^2)*rho(i,j)/(epsr(i,j)*eps0)) +  (0.5*hy^2 /(hx^2 + hy^2)) * (V(i-1,j)+V(i+1,j)+(hy^2 * hx^2)*rho(i,j)/(epsr(i,j)*eps0)) -V(i,j) ;
+            % another residue definition below also works; converges at
+            % iteration 430 (not too different)
+            % residue = (0.25 * (V(i-1,j)+V(i+1,j)+V(i,j-1)+V(i,j+1)+(hx*hy*rho(i,j)/(epsr(i,j)*eps0))) -V(i,j) );
+            V_before(i,j) = V(i,j);
+            V(i,j) = V(i,j) + w*residue;
+            V(platet, platel:plater) = 10;
+            V(plateb, platel:plater) = -10;
+        end
+    end
+    if (max(abs(V-V_before))<thres)
+        loop = 0;       % exit with convergence
+        fprintf("Convergence at iteration %i",Niter)
+        fprintf("\n")
+    else
+        Niter = Niter + 1;
+        if Niter>Maxiter
+            loop = 0;   % exit without convergence
+            fprintf("No convergence through max iterations %i",Maxiter)
+            fprintf("\n")
+        end
+    end
+    % Plot iterations of solution
+%     imagesc(V);
+%     colorbar;
+%     title(['\fontsize{10}Potential, ',int2str(ngridy),'x',int2str(ngridx),' grid; iteration #',int2str(Niter)],'Color','k');
+%     xlabel('x-axis','FontSize',12);
+%     ylabel('y-axis','FontSize',12);
+%     set(gca,'YDir','normal');
+%     set(gca,'FontSize',12);
+%     getframe;
+    disp(Niter)
+end
+
+%% Calculate E field from gradient of potential
+
+[Ex,Ey] = gradient(-V);
+E = sqrt(Ex.*Ex + Ey.*Ey);
+
+%% Plot potential and E field
+figure(2)
+contourf(x,y,V,8)
+%imagesc(x, y, V)
+hold on
+set(gca,'YDir','normal')    % set the axis to be from bottom to top
+colorbar();
+%quiver(x,y,Ex,Ey,'k','linewidth',1,'AutoScaleFactor',2);
+%streamslice(x,y,Ex,Ey,'noarrows');
+title(['\fontsize{14}Final Potential V (contours)'],'Color','k');
+xlabel('x-axis','FontSize',12);
+ylabel('y-axis','FontSize',12);
+set(gca,'FontSize',12);
+hold off
+%%
+figure(3)
+imagesc(x, y, E);
+hold on
+set(gca,'YDir','normal')    % set the axis to be from bottom to top
+colorbar();
+quiver(x,y,Ex,Ey);
+title(['\fontsize{14}E field (arrow:direction , colour:magnitude)'],'Color','k');
+xlabel('x-axis','FontSize',12);
+ylabel('y-axis','FontSize',12);
+set(gca,'FontSize',12);
+hold off
+
+   
