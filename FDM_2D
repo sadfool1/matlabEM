@@ -84,3 +84,128 @@ ylabel('y','FontSize',12);
 set(gca,'FontSize',12);
 hold off
 
+
+
+
+
+
+
+
+
+
+
+
+%Utilize relaxation method for a 2D grid
+%Written for a square grid (n x n) and equal grid spacing (hx = hy = h)
+
+clear all;
+close all;
+clc;
+
+%% Initialise parameters and arrays
+eps0 = 8.85e-12;    % permittivity of vacuum in SI units
+a = 0.20;           % set a = 0.20 m (as given in Q3)
+b = 0.06;           % set b = 0.06 m (as given in Q3)
+V0 = 100;            % V0 as given in Q3
+
+nx = 21;        % no. of gridpoints in x direction incl. ends  (= no of columns + 1)
+ny = 21;        % no. of gridpoints in y direction incl. ends  (= no of rows + 1)
+
+hx = a/(nx-1);  % x-spacing
+hy = a/(ny-1);  % y-spacing
+
+x = linspace(-a/2,a/2,nx);     % vector of x coordinate values
+y = linspace(-a/2,a/2,ny);     % vector of y coordinate values
+
+[X,Y] = meshgrid(x,y);           % create a meshgrid for X, Y coordinates
+
+V = zeros(ny, nx);           % initialise the solution potential array to zero
+V_before = zeros(ny, nx);    % initialise the "before" iterated solution
+rho = zeros(ny, nx);         % initialise the charge density array to zero (for parallel plate problem, we don't need this)
+epsr = ones(ny, nx);         % initialise the relative permittivity to 1
+
+%% Set boundary conditions 
+
+k = round(0.8*ny +1);      % find the row that denotes upper limit of the right side
+l = round(1+ nx*(a-b)/a);  % find the column that denotes right limit of top side
+
+% Dirichlet b.c. 
+V(1,:) = V0;    % bottom side of grid = top row of matrix
+V(2:ny-2,1) = 0;  % left side of grid = left column of matrix
+V(2:k-1,nx) = 0;  % right side of grid = right column of matrix
+V(nx,1:l) = V0; % top side of grid = bottom row of matrix
+
+% b.c. for the cut out top right corner
+% probably not computationally costly to include the cut out gridpoints,
+% so will just set them all to be a constant V0/2
+for i=k:ny
+    for j=l:nx
+        V(i,j)=V0/2;
+    end
+end
+
+V_before = V;
+
+%% This part is the fdm successive over relaxation method
+
+t=cos(pi/nx)+cos(pi/ny);    
+w=(8-sqrt(64-16*t*t))/(t*t);        % "over-relaxation" term
+thres = 1e-4;                       % threshold of convergence
+Niter=1;                            % count the no. of iterations
+Maxiter=1000;                      % set a maximum no. of iterations (in case it takes too long)
+loop=1;                             % loop boolean -- if true, loop; else if false, break out of loop
+
+% Iterative successive over-relaxation loop
+while loop==1
+    for i = 2:ny-1    % avoid the rectangular sides - Dirichlet bc
+        for j = 2:nx-1    % avoid the rectangular sides - Dirichlet bc
+            residue =  (0.5*hx^2 /(hx^2 + hy^2))*(V(i,j-1)+V(i,j+1)+(hy^2 * hx^2)*rho(i,j)/(epsr(i,j)*eps0)) +  (0.5*hy^2 /(hx^2 + hy^2)) * (V(i-1,j)+V(i+1,j)+(hy^2 * hx^2)*rho(i,j)/(epsr(i,j)*eps0)) -V(i,j) ;
+            V_before(i,j) = V(i,j);
+            V(i,j) = V(i,j) + w * residue;
+            if (i > k-1 && j > l-1)
+                V(i,j)=V0/2;  % brute force; repeatedly set the cut out corner potential
+            end
+        end
+    end
+    if (max(abs(V-V_before))<thres)
+        loop = 0;       % exit with convergence
+        fprintf("Convergence at iteration %i",Niter)
+        fprintf("\n")
+    else
+        Niter = Niter + 1;
+        if Niter>Maxiter
+            loop = 0;   % exit without convergence
+            fprintf("No convergence through max iterations %i",Maxiter)
+            fprintf("\n")
+        end
+    end
+    imagesc(V);
+    colorbar;
+    title(['\fontsize{12}Potential, ',int2str(ny),'x',int2str(nx),' grid; iteration #',int2str(Niter)],'Color','k');
+    xlabel('x','FontSize',12);
+    ylabel('y','FontSize',12);
+    set(gca,'YDir','normal');
+    set(gca,'FontSize',12);
+    getframe;
+end
+
+%% Remove the cut out corner values
+for ii=k+1:ny
+    for jj=l+1:nx
+        V(ii,jj)=NaN; % make these points "Not a Number" - NaN so that it doesn't get plotted
+    end
+end
+
+%% Plot potential
+
+figure(2)
+surf(X, Y, V)
+hold on
+set(gca,'YDir','normal')    % set the axis to be from bottom to top
+colorbar;
+title(['\fontsize{14}Potential V, iterative method'],'Color','k');
+xlabel('x','FontSize',12);
+ylabel('y','FontSize',12);
+set(gca,'FontSize',12);
+hold off
+
