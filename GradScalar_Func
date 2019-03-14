@@ -1,0 +1,14 @@
+%MATLAB code to get gradient of a scalar Funtion
+[x,y] = meshgrid(-2:0.2:2, -2:0.2:2);
+z = 1 .* exp(-x.^2 - y.^2);
+[px,py] = gradient(z); %gradient (MATLAB command) returns components of the scalar function in array
+figure()
+contour(x,y,z)
+hold on
+quiver(x,y,px,py)
+hold off
+axis image
+figure()
+surf(x,y,z)
+colormap(jet)
+axis image
