@@ -1,0 +1,41 @@
+%2D graphical representation of curl
+
+alpha=3;
+omega=1;
+[x,y,z] =meshgrid( -2 : .5 : 2, -2 : .5 : 2 , 0 :0.1 : 1 );
+M=length(x(:,1,1)); N=length(y(1,:,1));Q=length(z(1,1,:));
+Ax = zeros(M,N,Q);
+Ay = Ax; Az = Ax;
+r2=(x.^2+y.^2).*heaviside(-z);
+ for k=1:M
+  for l=1:N
+   for m=1:Q
+   Ax(k,l,m)=-exp(-r2(k,l,m)/alpha.^2)*y(k,l,m)*omega*heaviside(-z(k,l,m));
+   Ay(k,l,m)=exp(-r2(k,l,m)/alpha.^2)*x(k,l,m)*omega*heaviside(-z(k,l,m));
+   end
+  end
+ end
+close all
+
+_______________________________________________________________________________________________________________________________
+%3D graphical representation of curl
+figure()
+quiver(x,y,Ax,Ay)
+title('Plot of vector field A (at z=0)')
+xlabel('x'); ylabel('y')
+ax = gca;
+ax.FontSize=16
+axis square
+[Cx, Cy, Cz] = curl(x,y,z,Ax,Ay,Az); %curl (MATLAB command) returns 3 arrays of the components of the curl of the vector
+A = sqrt(Ax(:,:,1).^2 + Ay(:,:,1).^2);
+figure()
+quiver3(x,y,z, Cx,Cy,Cz)% plots a 3d vector field
+hold on
+quiver(x,y,Ax,Ay)
+axis ([-2 2 -2 2 0 0.08])
+title('Curl of A (blue) with vector field A (orange)')
+xlabel('x'); ylabel('y')
+ax = gca;
+ax.FontSize=16
+axis square
+hold off
