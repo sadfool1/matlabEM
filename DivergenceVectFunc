@@ -1,0 +1,22 @@
+%Matlab code to obtain sample divergence vector function
+
+alpha=3;
+[x,y] =meshgrid( -2:0.25:2, -2:0.25:2 ); %obtain 3D image
+M=length(x); N=length(y);
+r2=x.^2+y.^2;
+for k=1:M
+ for l=1:N
+ Ax(k,l)=exp(-r2(k,l)/alpha.^2)*x(k,l);
+ Ay(k,l)=exp(-r2(k,l)/alpha.^2)*y(k,l);
+ end
+end
+figure()
+quiver(x,y,Ax,Ay)
+axis equal
+axis square
+
+D=divergence(x,y,Ax,Ay); %divergence (MATLAB command) returns scalar quantity of divergence
+figure()
+surf(x,y,D)
+axis equal
+
