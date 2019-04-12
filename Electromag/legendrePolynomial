@@ -1,0 +1,16 @@
+%Code to plot Legendre polynomials using symbolic functions in MATLAB
+
+close 'all'
+clc
+clear 'all'
+
+syms x y
+fplot(legendreP(1:5, x))
+axis([-1.5 1.5 -1 1])
+grid on
+
+ylabel('P_n(x)')
+xlabel('x')
+title('Legendre polynomials of degrees 1 through 5')
+legend('1','2','3','4','5','Location','best')
+
